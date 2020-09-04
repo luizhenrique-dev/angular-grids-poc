@@ -1,0 +1,27 @@
+<div class="test-container">
+	<div class="test-header">
+		<input type="text" #inputPesquisa
+		       [(ngModel)]="filtroGeral"
+		       (ngModelChange)="this.filtroGeralUpdate.next($event)"
+		       placeholder="Pesquisar..." />
+	</div>
+	<ag-grid-angular
+		#agGrid
+		class="ag-theme-material ag-grid-layout"
+		[autoGroupColumnDef]="autoGroupColumnDef"
+		[rowData]="rowData"
+		[columnDefs]="columnDefs"
+		rowSelection="multiple"
+		[enableRangeSelection]="true"
+		[animateRows]="true"
+		[localeText]="agGrigInternationalisation.localeText"
+		(gridReady)="onGridReady($event)"
+		[pagination]="true"
+		[paginationPageSize]="10"
+		[defaultColDef]="defaultColDef"
+		[cacheQuickFilter]="true"
+	>
+	</ag-grid-angular>
+</div>
+
+<!--<button (click)="getSelectedRows()">Get Selected Rows</button>-->

@@ -1,1 +1,16 @@
-/* You can add global styles to this file, and also import other style files */
+@import "../node_modules/ag-grid-community/src/styles/ag-grid.scss";
+@import "../node_modules/ag-grid-community/src/styles/ag-theme-alpine/sass/ag-theme-alpine-mixin.scss";
+@import "../node_modules/ag-grid-community/src/styles/ag-theme-material/sass/ag-theme-material-mixin.scss";
+
+.ag-theme-material {
+  @include ag-theme-material((
+          odd-row-background-color: #dbe3e7
+  ));
+}
+html {
+  height: 100vh;
+}
+
+body {
+  transition: background-color 200ms linear;
+}
