@@ -4,11 +4,24 @@
 		       [(ngModel)]="filtroGeral"
 		       (ngModelChange)="this.filtroGeralUpdate.next($event)"
 		       placeholder="Pesquisar..." />
+		<button (click)="onBtnExportDataAsExcel()">
+			Exportar pra Excel
+		</button>
+
+		Page Size:
+		<select #inputPageSize
+		        [(ngModel)]="tamanhoPagina"
+		        (change)="onPageSizeChanged($event)" id="page-size">
+			<option value="10" selected>10</option>
+			<option value="100">100</option>
+			<option value="500">500</option>
+			<option value="1000">1000</option>
+		</select>
 	</div>
 	<ag-grid-angular
 		#agGrid
 		class="ag-theme-material ag-grid-layout"
-		[autoGroupColumnDef]="autoGroupColumnDef"
+		[rowGroupPanelShow]="'always'"
 		[rowData]="rowData"
 		[columnDefs]="columnDefs"
 		rowSelection="multiple"
@@ -20,8 +33,15 @@
 		[paginationPageSize]="10"
 		[defaultColDef]="defaultColDef"
 		[cacheQuickFilter]="true"
+		[groupIncludeFooter]="true"
+		[sideBar]="sideBar"
+		[overlayLoadingTemplate]="overlayLoadingTemplate"
+		[overlayNoRowsTemplate]="overlayNoRowsTemplate"
+		paginationPageSize = 10
 	>
 	</ag-grid-angular>
 </div>
-
+<!--		[suppressDragLeaveHidesColumns]="true"-->
+<!--paginationAutoPageSize=true-->
 <!--<button (click)="getSelectedRows()">Get Selected Rows</button>-->
+<!--[paginationNumberFormatter]="paginationNumberFormatter"-->

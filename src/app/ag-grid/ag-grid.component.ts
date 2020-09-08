@@ -6,7 +6,7 @@ import { AgGrigInternationalisation } from '../ag-grig-internationalisation';
 import { GridApi } from 'ag-grid-community';
 import { ColumnApi } from 'ag-grid-community/dist/lib/columnController/columnApi';
 import { ColumnState } from 'ag-grid-community/dist/lib/columnController/columnController';
-import { debounceTime, distinctUntilChanged, filter } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 declare global {
 	interface Window {
@@ -34,22 +34,29 @@ export class AgGridComponent implements OnInit, AfterViewInit {
 
 	columnDefs = [
 		{
-			headerName  : 'País', field: 'country', sortable: true, filter: true, checkboxSelection: true,
+			headerName       : 'País', field: 'country',
+			sortable         : true, filter: 'agSetColumnFilter',
+			checkboxSelection: true, enableRowGroup: true,
+		},
+		{ headerName: 'Idade', field: 'age', sortable: false, filter: false },
+		{ headerName: 'Ano', field: 'year', sortable: true, type: 'numberColumn', enableRowGroup: true, filter: true },
+		{
+			headerName              : 'Data',
+			field                   : 'date',
+			sortable                : true,
+			comparator              : dateComparator,
+			suppressFiltersToolPanel: true,
+			width                   : 220,
+		},
+		{
+			headerName  : 'Esporte', field: 'sport', sortable: true, filter: 'agSetColumnFilter', enableRowGroup: true,
 			filterParams: {
-				buttons   : ['limpar', 'aplicar'],
-				debounceMs: 200
+				applyMiniFilterWhileTyping: true,
+				suppressSelectAll         : false,
+				closeOnApply              : true,
+				debounceMs                : 700
 			}
 		},
-		{ headerName: 'Idade', field: 'age', sortable: true, filter: false },
-		{ headerName: 'Ano', field: 'year', sortable: true, type: 'numberColumn', },
-		{
-			headerName: 'Data',
-			field     : 'date',
-			sortable  : true,
-			comparator: dateComparator,
-			width     : 220,
-		},
-		{ headerName: 'Esporte', field: 'sport', sortable: true, filter: 'agSetColumnFilter' },
 		{ headerName: 'Ouro', field: 'gold', sortable: true, filter: true, type: 'medalColumn', },
 		{ headerName: 'Prata', field: 'silver', sortable: true, filter: true, type: 'medalColumn', },
 		{ headerName: 'Bronze', field: 'bronze', sortable: true, filter: true, type: 'medalColumn', },
@@ -94,11 +101,14 @@ export class AgGridComponent implements OnInit, AfterViewInit {
 	};
 
 	defaultColDef = {
-		flex     : 1,
-		minWidth : 100,
-		filter   : true,
-		resizable: true,
-		sortable : true,
+		flex          : 1,
+		minWidth      : 100,
+		filter        : true,
+		resizable     : true,
+		sortable      : true,
+		enableValue   : true,
+		enableRowGroup: true,
+		floatingFilter: true,
 	};
 
 	autoGroupColumnDef = {
@@ -106,18 +116,51 @@ export class AgGridComponent implements OnInit, AfterViewInit {
 		field             : 'country',
 		cellRenderer      : 'agGroupCellRenderer',
 		cellRendererParams: {
-			checkbox: true
+			checkbox: true,
 		}
+	};
+
+	sideBar = {
+		toolPanels     : [
+			{
+				id             : 'columns',
+				labelDefault   : 'Columns',
+				labelKey       : 'columns',
+				iconKey        : 'columns',
+				toolPanel      : 'agColumnsToolPanel',
+				toolPanelParams: {
+					suppressPivotMode: true,
+					suppressPivots   : true,
+				}
+			},
+			{
+				id          : 'filters',
+				labelDefault: 'Filtros Avançados',
+				labelKey    : 'filters',
+				iconKey     : 'filter',
+				toolPanel   : 'agFiltersToolPanel',
+			}
+		],
+		position       : 'left',
+		hiddenByDefault: false
 	};
 
 	rowData: any;
 	@ViewChild('agGrid') agGrid: AgGridAngular;
 	@ViewChild('inputPesquisa') inputPesquisaRef: ElementRef;
+	@ViewChild('inputPageSize') inputPageSizeRef: ElementRef;
 	private gridApi?: GridApi;
 	private gridColumnApi?: ColumnApi;
 
 	public filtroGeral: string;
+	public tamanhoPagina: number;
 	filtroGeralUpdate = new Subject<string>();
+	public paginationNumberFormatter = ((params) => {
+		return '<bold>[' + params.value.toLocaleString() + ']</bold>';
+	});
+
+	overlayLoadingTemplate = '<span class="ag-overlay-loading-center">Por favor aguarde enquanto os dados são carregados.</span>';
+	overlayNoRowsTemplate = '<span style="padding: 10px; border: 2px solid #444; background: lightgoldenrodyellow;">Nenhum registro foi encontrado.</span>';
 
 	constructor(
 		private http: HttpClient,
@@ -128,9 +171,9 @@ export class AgGridComponent implements OnInit, AfterViewInit {
 	}
 
 	ngAfterViewInit(): void {
+		// filter(Boolean),
 		this.filtroGeralUpdate.pipe(
-			filter(Boolean),
-			debounceTime(700),
+			debounceTime(500),
 			distinctUntilChanged())
 			.subscribe(value => {
 				this.gridApi.setQuickFilter(value);
@@ -215,6 +258,27 @@ export class AgGridComponent implements OnInit, AfterViewInit {
 		});
 	}
 
+	onBtnExportDataAsExcel(): void {
+		const params = getParams();
+		if (
+			typeof params.customHeader === 'string' ||
+			typeof params.customFooter === 'string'
+		) {
+			alert('Excel does not support strings in customHeader or customFooter');
+			return;
+		}
+		this.gridApi.exportDataAsExcel(params);
+	}
+
+	teste(params): string {
+		return '[' + params.value.toLocaleString() + ']';
+	}
+
+	onPageSizeChanged(newPageSize): void {
+		console.log(newPageSize);
+		this.gridApi.paginationSetPageSize(Number(this.tamanhoPagina));
+	}
+
 }
 
 function dateComparator(date1, date2): number {
@@ -240,4 +304,95 @@ function monthToComparableNumber(date): number {
 	const monthNumber = date.substring(3, 5);
 	const dayNumber = date.substring(0, 2);
 	return yearNumber * 10000 + monthNumber * 100 + dayNumber;
+}
+
+function getBooleanValue(checkboxSelector): boolean {
+	return document.querySelector(checkboxSelector).checked;
+}
+
+function getUIValue(checkboxSelector, onWindow): any {
+	if (!getBooleanValue(checkboxSelector)) {
+		return false;
+	}
+	return (document.querySelector(checkboxSelector + 'Value') as HTMLInputElement).value;
+}
+
+function makeCustomContent(): any {
+	return [
+		[],
+		[
+			{
+				data: {
+					type : 'String',
+					value: 'Summary',
+				},
+			},
+		],
+		[
+			{
+				data       : {
+					type : 'String',
+					value: 'Sales',
+				},
+				mergeAcross: 2,
+			},
+			{
+				data: {
+					type : 'Number',
+					value: '3695.36',
+				},
+			},
+		],
+		[],
+	];
+}
+
+function myCellCallback(params): any {
+	if (params.value && params.value.toUpperCase) {
+		return params.value.toUpperCase();
+	} else {
+		return params.value;
+	}
+}
+
+function myGroupHeaderCallback(params): string {
+	const displayName = params.columnApi.getDisplayNameForColumnGroup(
+		params.columnGroup
+	);
+	return displayName.toUpperCase();
+}
+
+function myHeaderCallback(params): string {
+	return params.column.getColDef().headerName.toUpperCase();
+}
+
+function myRowGroupCallback(params): string {
+	const indent = '--';
+	let node = params.node;
+	let label = node.key.toUpperCase();
+	if (!node.parent.parent) {
+		return label;
+	}
+	label = '> ' + label;
+	while (node.parent.parent) {
+		label = indent + label;
+		node = node.parent;
+	}
+	return label;
+}
+
+function getParams(): any {
+	return {
+		columnGroups: true,
+
+		fileName                  : getUIValue('#fileName', null),
+		processCellCallback       :
+			getBooleanValue('#processCellCallback') && myCellCallback,
+		processGroupHeaderCallback:
+			getBooleanValue('#processGroupHeaderCallback') && myGroupHeaderCallback,
+		processHeaderCallback     :
+			getBooleanValue('#processHeaderCallback') && myHeaderCallback,
+		processRowGroupCallback   :
+			getBooleanValue('#processRowGroupCallback') && myRowGroupCallback,
+	};
 }
