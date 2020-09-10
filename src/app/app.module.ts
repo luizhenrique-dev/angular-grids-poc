@@ -9,11 +9,7 @@ import 'ag-grid-enterprise';
 import { DevExtremeModule, DxBulletModule, DxButtonModule, DxDataGridModule, DxServerTransferStateModule, DxTemplateModule } from 'devextreme-angular';
 import { DevExtremeComponent } from './dev-extreme/dev-extreme.component';
 import { AgGridComponent } from './ag-grid/ag-grid.component';
-import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
 import { FormsModule } from '@angular/forms';
-import { SetFilterModule } from 'ag-grid-enterprise/dist/lib/setFilterModule';
-
-import './localization';
 
 @NgModule({
 	declarations: [
